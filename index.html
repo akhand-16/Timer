@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chronos - Minimalist Time Suite</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Space Grotesk & Bebas Neue -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            claude: {
+              DEFAULT: 'var(--accent-color, #D97757)',
+              hover: 'var(--accent-hover, #C46849)',
+              active: 'var(--accent-active, #B05B3E)',
+              subtle: 'var(--accent-subtle, rgba(217, 119, 87, 0.15))',
+              glow: 'var(--accent-glow, rgba(217, 119, 87, 0.35))'
+            },
+            surface: {
+              base: '#000000',
+              elevated: '#0d0d0d',
+              card: '#141414',
+              border: '#222222',
+            }
+          },
+          fontFamily: {
+            display: ['"Bebas Neue"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --accent-color: #D97757;
+      --accent-hover: #C46849;
+      --accent-active: #B05B3E;
+      --accent-subtle: rgba(217, 119, 87, 0.15);
+      --accent-glow: rgba(217, 119, 87, 0.35);
+    }
+
+    /* Full black backdrop */
+    body {
+      background-color: #000000;
+      color: #FFFFFF;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Dynamic Accent Classes */
+    .theme-accent-text {
+      color: var(--accent-color) !important;
+    }
+    .theme-accent-border {
+      border-color: var(--accent-color) !important;
+    }
+    .theme-accent-bg {
+      background-color: var(--accent-color) !important;
+    }
+
+    /* Claude Brand Button Primary */
+    .btn-claude {
+      background-color: var(--accent-color);
+      color: #FFFFFF;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .btn-claude:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px var(--accent-glow);
+    }
+    .btn-claude:active:not(:disabled) {
+      background-color: var(--accent-active);
+      transform: translateY(1px);
+    }
+    .btn-claude:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Claude Outlined / Ghost Button */
+    .btn-claude-outline {
+      background-color: transparent;
+      border: 1.5px solid var(--accent-color);
+      color: var(--accent-color);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      transition: all 0.2s ease;
+    }
+    .btn-claude-outline:hover:not(:disabled) {
+      background-color: var(--accent-color);
+      color: #FFFFFF;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .btn-claude-outline:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      border-color: #444;
+      color: #666;
+    }
+
+    /* Giant Numbers Font & Styling */
+    .hero-digits {
+      font-family: 'Bebas Neue', sans-serif;
+      line-height: 0.88;
+      letter-spacing: 0.02em;
+    }
+
+    /* Custom Size Slider */
+    .size-range-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 9999px;
+      background: #27272a;
+      outline: none;
+      transition: background 0.2s;
+    }
+    .size-range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-glow);
+      transition: transform 0.15s ease;
+    }
+    .size-range-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+    .size-range-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* 10-Second Auto Inactivity Hide Classes */
+    .fade-ui {
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s ease;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    body.user-idle .fade-ui {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(10px);
+    }
+    body.user-idle {
+      cursor: none !important;
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    /* Custom Scrollbar for Laps and Tables */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--accent-color);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#D97757] selection:text-white">
+
+  <!-- ======================================================== -->
+  <!-- TOP NAVIGATION BAR (Present on Tool Pages, Hidden on Menu)-->
+  <!-- ======================================================== -->
+  <header id="topNav" class="fade-ui fixed top-0 left-0 right-0 z-40 p-4 sm:p-6 flex items-center justify-between pointer-events-auto hidden">
+    <!-- Back / Menu Button -->
+    <button onclick="navigateTo('menu')" class="btn-claude-outline py-2 px-4 rounded-xl text-xs sm:text-sm flex items-center gap-2 group">
+      <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+      <span>MENU</span>
+    </button>
+
+    <!-- Center/Right Controls: Size Scale Slider & Fullscreen -->
+    <div class="flex items-center gap-3 sm:gap-4">
+      <!-- Discreet Size Slider -->
+      <div class="flex items-center gap-2 bg-neutral-950/80 border border-neutral-800/80 backdrop-blur-md px-3 py-1.5 rounded-xl">
+        <i class="fa-solid fa-text-height text-[11px] theme-accent-text"></i>
+        <input 
+          id="digitScaleSlider" 
+          type="range" 
+          min="0.5" 
+          max="1.5" 
+          step="0.05" 
+          value="1" 
+          class="size-range-slider w-16 sm:w-24" 
+          title="Adjust display size"
+          oninput="adjustDigitScale(this.value)"
+        >
+      </div>
+
+      <!-- Quick Theme Studio Link -->
+      <button onclick="navigateTo('theme')" title="Customize Accent Colors" class="btn-claude-outline w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs">
+        <i class="fa-solid fa-palette"></i>
+      </button>
+
+      <!-- Quick Analytics Link -->
+      <button onclick="navigateTo('analytics')" title="Activity Analytics" class="btn-claude-outline w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs">
+        <i class="fa-solid fa-chart-simple"></i>
+      </button>
+
+      <!-- Bell Sound Test Button -->
+      <button onclick="playAcousticBell(); showToast('Bell Chime');" title="Test Bell Sound" class="btn-claude-outline w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs">
+        <i class="fa-solid fa-bell"></i>
+      </button>
+
+      <button id="clockFormatToggle" onclick="toggleClock12_24()" class="hidden btn-claude-outline py-2 px-3 rounded-xl text-xs font-mono">
+        12H
+      </button>
+
+      <!-- Dedicated Full Screen Toggle -->
+      <button id="fsBtn" onclick="toggleFullScreen()" title="Toggle Fullscreen" class="btn-claude w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center">
+        <i id="fsIcon" class="fa-solid fa-expand text-sm"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1: VERTICAL LAUNCHER (MAIN OPENING SCREEN)         -->
+  <!-- ======================================================== -->
+  <main id="view-menu" class="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative z-10">
+    <div class="text-center mb-8">
+      <h1 class="hero-digits text-6xl sm:text-8xl tracking-wider text-white">CHRONOS</h1>
+      <p class="text-xs sm:text-sm font-sans uppercase tracking-[0.3em] theme-accent-text font-semibold mt-1">
+        Aesthetic Precision Time Suite
+      </p>
+    </div>
+
+    <!-- 3 Core Vertical Action Buttons -->
+    <div class="w-full max-w-xs sm:max-w-sm flex flex-col gap-3.5">
+      <button onclick="navigateTo('clock')" class="btn-claude w-full py-4 sm:py-5 rounded-2xl text-xl sm:text-2xl font-display tracking-widest flex items-center justify-between px-8 group">
+        <span class="flex items-center gap-3">
+          <i class="fa-regular fa-clock text-base"></i> CLOCK
+        </span>
+        <i class="fa-solid fa-chevron-right text-xs opacity-80 group-hover:translate-x-1 transition-transform"></i>
+      </button>
+
+      <button onclick="navigateTo('timer-choice')" class="btn-claude w-full py-4 sm:py-5 rounded-2xl text-xl sm:text-2xl font-display tracking-widest flex items-center justify-between px-8 group">
+        <span class="flex items-center gap-3">
+          <i class="fa-solid fa-hourglass-half text-base"></i> TIMER
+        </span>
+        <i class="fa-solid fa-chevron-right text-xs opacity-80 group-hover:translate-x-1 transition-transform"></i>
+      </button>
+
+      <button onclick="navigateTo('stopwatch')" class="btn-claude w-full py-4 sm:py-5 rounded-2xl text-xl sm:text-2xl font-display tracking-widest flex items-center justify-between px-8 group">
+        <span class="flex items-center gap-3">
+          <i class="fa-solid fa-stopwatch text-base"></i> STOPWATCH
+        </span>
+        <i class="fa-solid fa-chevron-right text-xs opacity-80 group-hover:translate-x-1 transition-transform"></i>
+      </button>
+    </div>
+
+    <!-- Secondary Utilities: Analytics & Theme Color Studio -->
+    <div class="w-full max-w-xs sm:max-w-sm grid grid-cols-2 gap-3 mt-4">
+      <button onclick="navigateTo('analytics')" class="btn-claude-outline py-3 rounded-2xl text-xs sm:text-sm font-sans font-semibold flex items-center justify-center gap-2">
+        <i class="fa-solid fa-chart-column"></i>
+        <span>ANALYTICS</span>
+      </button>
+      <button onclick="navigateTo('theme')" class="btn-claude-outline py-3 rounded-2xl text-xs sm:text-sm font-sans font-semibold flex items-center justify-center gap-2">
+        <i class="fa-solid fa-palette"></i>
+        <span>THEME</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1.2: TIMER OR POMODORO SELECTION                   -->
+  <!-- ======================================================== -->
+  <section id="view-timer-choice" class="hidden min-h-screen flex flex-col items-center justify-center px-6 py-12 relative z-10">
+    <div class="text-center mb-8">
+      <h2 class="hero-digits text-5xl sm:text-7xl text-white">CHOOSE MODE</h2>
+      <p class="text-xs sm:text-sm font-sans uppercase tracking-[0.25em] theme-accent-text font-semibold mt-1">
+        Standard Timer or Pomodoro Focus
+      </p>
+    </div>
+
+    <div class="w-full max-w-xs sm:max-w-sm flex flex-col gap-3.5">
+      <button onclick="navigateTo('timer')" class="btn-claude w-full py-4 sm:py-5 rounded-2xl text-xl sm:text-2xl font-display tracking-widest flex items-center justify-between px-8 group">
+        <span class="flex items-center gap-3">
+          <i class="fa-solid fa-stopwatch-20 text-base"></i> STANDARD TIMER
+        </span>
+        <i class="fa-solid fa-chevron-right text-xs opacity-80 group-hover:translate-x-1 transition-transform"></i>
+      </button>
+
+      <button onclick="navigateTo('pomo-setup')" class="btn-claude w-full py-4 sm:py-5 rounded-2xl text-xl sm:text-2xl font-display tracking-widest flex items-center justify-between px-8 group">
+        <span class="flex items-center gap-3">
+          <i class="fa-solid fa-brain text-base"></i> POMODORO
+        </span>
+        <i class="fa-solid fa-chevron-right text-xs opacity-80 group-hover:translate-x-1 transition-transform"></i>
+      </button>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1.3: ACTIVITY ANALYTICS & LOCAL FILE STORAGE       -->
+  <!-- ======================================================== -->
+  <section id="view-analytics" class="hidden min-h-screen flex flex-col items-center justify-start pt-24 pb-12 px-4 sm:px-6 relative z-10 max-w-5xl mx-auto w-full">
+    <!-- Header & Storage Sync Actions -->
+    <div class="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div>
+        <h2 class="hero-digits text-4xl sm:text-6xl text-white">ACTIVITY ANALYTICS</h2>
+        <p class="text-xs uppercase font-sans tracking-widest theme-accent-text font-semibold">Track focus sessions, breaks & timers</p>
+      </div>
+
+      <!-- Local File Connection & Import/Export -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="syncLocalFile()" id="syncFileBtn" title="Sync activity directly with a local file on your computer" class="btn-claude py-2 px-3 sm:px-4 rounded-xl text-xs flex items-center gap-2">
+          <i class="fa-solid fa-folder-open"></i>
+          <span id="syncFileBtnText">CONNECT LOCAL FILE</span>
+        </button>
+        <button onclick="exportDataJSON()" title="Download raw JSON backup" class="btn-claude-outline py-2 px-3 rounded-xl text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-download"></i> <span>EXPORT</span>
+        </button>
+        <label class="btn-claude-outline py-2 px-3 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-upload"></i> <span>IMPORT</span>
+          <input type="file" accept=".json" onchange="importDataJSON(event)" class="hidden">
+        </label>
+      </div>
+    </div>
+
+    <!-- Period Filter Pills -->
+    <div class="w-full flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+      <span class="text-xs uppercase font-mono text-neutral-500 mr-2">Filter:</span>
+      <button onclick="setAnalyticsFilter('all')" id="filter-all" class="filter-pill btn-claude py-1.5 px-4 rounded-xl text-xs font-mono">ALL TIME</button>
+      <button onclick="setAnalyticsFilter('3days')" id="filter-3days" class="filter-pill btn-claude-outline py-1.5 px-4 rounded-xl text-xs font-mono">LAST 3 DAYS</button>
+      <button onclick="setAnalyticsFilter('week')" id="filter-week" class="filter-pill btn-claude-outline py-1.5 px-4 rounded-xl text-xs font-mono">THIS WEEK</button>
+      <button onclick="setAnalyticsFilter('month')" id="filter-month" class="filter-pill btn-claude-outline py-1.5 px-4 rounded-xl text-xs font-mono">THIS MONTH</button>
+    </div>
+
+    <!-- Summary Metrics Cards -->
+    <div class="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div class="bg-surface-elevated border border-surface-border p-4 rounded-2xl text-left">
+        <p class="text-[11px] uppercase font-sans text-neutral-400">Total Focus Time</p>
+        <h4 id="statFocusTime" class="hero-digits text-3xl sm:text-4xl text-white mt-1">0m</h4>
+        <span class="text-[10px] font-mono theme-accent-text">Completed Focus</span>
+      </div>
+
+      <div class="bg-surface-elevated border border-surface-border p-4 rounded-2xl text-left">
+        <p class="text-[11px] uppercase font-sans text-neutral-400">Total Break Time</p>
+        <h4 id="statBreakTime" class="hero-digits text-3xl sm:text-4xl text-white mt-1">0m</h4>
+        <span class="text-[10px] font-mono text-neutral-400">Rest & Refresh</span>
+      </div>
+
+      <div class="bg-surface-elevated border border-surface-border p-4 rounded-2xl text-left">
+        <p class="text-[11px] uppercase font-sans text-neutral-400">Pomodoros Done</p>
+        <h4 id="statPomoCount" class="hero-digits text-3xl sm:text-4xl text-white mt-1">0</h4>
+        <span class="text-[10px] font-mono theme-accent-text">Sessions</span>
+      </div>
+
+      <div class="bg-surface-elevated border border-surface-border p-4 rounded-2xl text-left">
+        <p class="text-[11px] uppercase font-sans text-neutral-400">Stopwatch Recorded</p>
+        <h4 id="statStopwatchTime" class="hero-digits text-3xl sm:text-4xl text-white mt-1">0m</h4>
+        <span class="text-[10px] font-mono text-neutral-400">Tracked</span>
+      </div>
+    </div>
+
+    <!-- Interactive Activity Chart -->
+    <div class="w-full bg-surface-elevated border border-surface-border rounded-3xl p-5 sm:p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm uppercase font-sans font-bold tracking-wider text-white">Daily Focus Activity (Minutes)</h3>
+        <span id="chartRangeSubtitle" class="text-xs font-mono text-neutral-400">Dynamic Trend</span>
+      </div>
+      <div class="h-64 w-full">
+        <canvas id="activityChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Detailed Activity Log Table -->
+    <div class="w-full bg-surface-elevated border border-surface-border rounded-3xl p-5 sm:p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm uppercase font-sans font-bold tracking-wider text-white">Session History</h3>
+        <button onclick="clearActivityHistory()" class="text-xs text-neutral-500 hover:text-red-400 font-mono transition-colors">
+          Clear History
+        </button>
+      </div>
+
+      <div class="overflow-x-auto max-h-72">
+        <table class="w-full text-left font-mono text-xs">
+          <thead>
+            <tr class="border-b border-surface-border text-neutral-500 uppercase text-[10px]">
+              <th class="py-2 px-3">Date & Time</th>
+              <th class="py-2 px-3">Type</th>
+              <th class="py-2 px-3">Duration</th>
+              <th class="py-2 px-3">Details</th>
+            </tr>
+          </thead>
+          <tbody id="activityLogTbody" class="divide-y divide-surface-border/50 text-neutral-300">
+            <!-- Dynamically Rendered -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1.4: THEME STUDIO (COLOR PICKER & LIVE PREVIEW)    -->
+  <!-- ======================================================== -->
+  <section id="view-theme" class="hidden min-h-screen flex flex-col items-center justify-start pt-24 pb-12 px-4 sm:px-6 relative z-10 max-w-6xl mx-auto w-full">
+    <div class="text-center mb-8">
+      <h2 class="hero-digits text-5xl sm:text-6xl text-white">THEME STUDIO</h2>
+      <p class="text-xs uppercase font-sans tracking-[0.25em] theme-accent-text font-semibold">Customize Accent Colors with Real-Time Preview</p>
+    </div>
+
+    <!-- 2-Column Layout: Left Controls / Right Preview -->
+    <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN: Color Picker & Presets -->
+      <div class="lg:col-span-5 bg-surface-elevated border border-surface-border rounded-3xl p-6 flex flex-col gap-6">
+        <div>
+          <h3 class="text-sm uppercase font-sans font-bold tracking-wider text-white mb-2">Accent Hex Code</h3>
+          <p class="text-xs text-neutral-400 font-sans mb-4">Input any valid HEX value to tint all interactive buttons, glows, and badges.</p>
+
+          <div class="flex items-center gap-3">
+            <input 
+              id="themeColorInput" 
+              type="color" 
+              value="#D97757" 
+              oninput="handleColorPickerChange(this.value)"
+              class="w-14 h-14 rounded-2xl bg-black border border-surface-border cursor-pointer p-1"
+            >
+            <div class="flex-1 bg-black border border-surface-border rounded-2xl px-4 py-3 flex items-center">
+              <span class="text-neutral-500 font-mono mr-2">#</span>
+              <input 
+                id="themeHexInput" 
+                type="text" 
+                maxlength="7" 
+                value="D97757" 
+                oninput="handleHexInputChange(this.value)"
+                class="w-full bg-transparent font-mono text-lg font-bold text-white uppercase focus:outline-none"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Curated Palette Swatches -->
+        <div>
+          <h3 class="text-xs uppercase font-mono text-neutral-400 mb-3 tracking-wider">Curated Color Palettes</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <button onclick="setThemeAccent('#D97757')" class="p-3 rounded-2xl bg-black border border-neutral-800 hover:border-[#D97757] flex items-center gap-2 text-xs font-mono transition-all">
+              <span class="w-4 h-4 rounded-full bg-[#D97757]"></span> Terracotta
+            </button>
+            <button onclick="setThemeAccent('#FF7A00')" class="p-3 rounded-2xl bg-black border border-neutral-800 hover:border-[#FF7A00] flex items-center gap-2 text-xs font-mono transition-all">
+              <span class="w-4 h-4 rounded-full bg-[#FF7A00]"></span> Sunset Orange
+            </button>
+            <button onclick="setThemeAccent('#EAB308')" class="p-3 rounded-2xl bg-black border border-neutral-800 hover:border-[#EAB308] flex items-center gap-2 text-xs font-mono transition-all">
+              <span class="w-4 h-4 rounded-full bg-[#EAB308]"></span> Solar Gold
+            </button>
+            <button onclick="setThemeAccent('#EF4444')" class="p-3 rounded-2xl bg-black border border-neutral-800 hover:border-[#EF4444] flex items-center gap-2 text-xs font-mono transition-all">
+              <span class="w-4 h-4 rounded-full bg-[#EF4444]"></span> Crimson Red
+            </button>
+            <button onclick="setThemeAccent('#06B6D4')" class="p-3 rounded-2xl bg-black border border-neutral-800 hover:border-[#06B6D4] flex items-center gap-2 text-xs font-mono transition-all">
+              <span class="w-4 h-4 rounded-full bg-[#06B6D4]"></span> Cyber Cyan
+            </button>
+            <button onclick="setThemeAccent('#10B981')" class="p-3 rounded-2xl bg-black border border-neutral-800 hover:border-[#10B981] flex items-center gap-2 text-xs font-mono transition-all">
+              <span class="w-4 h-4 rounded-full bg-[#10B981]"></span> Emerald
+            </button>
+          </div>
+        </div>
+
+        <button onclick="resetThemeToDefault()" class="btn-claude-outline py-3 rounded-2xl text-xs font-sans font-bold flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rotate-left"></i> <span>RESET TO CLAUDE TERRACOTTA (#D97757)</span>
+        </button>
+      </div>
+
+      <!-- RIGHT COLUMN: Real-Time Interactive Mini-Preview -->
+      <div class="lg:col-span-7 bg-surface-elevated border border-surface-border rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm uppercase font-sans font-bold tracking-wider text-white">Live Suite Preview</h3>
+          <span class="text-xs font-mono text-neutral-400">Changes reflect instantly</span>
+        </div>
+
+        <!-- Mock Interface Shell -->
+        <div class="bg-black border border-surface-border rounded-2xl p-6 text-center space-y-6">
+          <div class="flex items-center justify-between border-b border-surface-border pb-3">
+            <span class="text-xs font-mono theme-accent-text font-bold">PREVIEW MODE</span>
+            <div class="flex gap-2">
+              <span class="w-2.5 h-2.5 rounded-full theme-accent-bg"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-800"></span>
+            </div>
+          </div>
+
+          <!-- Mock Digits -->
+          <div class="py-4">
+            <p class="text-xs uppercase font-sans tracking-widest theme-accent-text font-bold mb-1">Focus Timer Mock</p>
+            <div class="hero-digits text-6xl sm:text-7xl font-bold text-white tracking-tight flex items-baseline justify-center">
+              <span>25</span>
+              <span class="theme-accent-text mx-1">:</span>
+              <span>00</span>
+            </div>
+          </div>
+
+          <!-- Mock Button Controls -->
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <button class="btn-claude py-2.5 px-6 rounded-xl text-xs flex items-center gap-2">
+              <i class="fa-solid fa-play text-[10px]"></i> START
+            </button>
+            <button class="btn-claude-outline py-2.5 px-5 rounded-xl text-xs flex items-center gap-2">
+              <i class="fa-solid fa-pause text-[10px]"></i> PAUSE
+            </button>
+            <button class="btn-claude-outline py-2.5 px-5 rounded-xl text-xs flex items-center gap-2">
+              <i class="fa-solid fa-rotate-left text-[10px]"></i> RESET
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1.5: POMODORO SETUP PAGE (CUSTOM NUMERIC INPUTS)    -->
+  <!-- ======================================================== -->
+  <section id="view-pomo-setup" class="hidden min-h-screen flex flex-col items-center justify-center px-6 py-12 relative z-10">
+    <div class="w-full max-w-sm sm:max-w-md bg-surface-elevated border border-surface-border rounded-3xl p-6 sm:p-8">
+      <div class="text-center mb-6">
+        <h2 class="hero-digits text-4xl sm:text-5xl text-white tracking-wide">POMODORO</h2>
+        <p class="text-xs text-neutral-400 uppercase font-sans tracking-widest mt-1">Set custom durations (minutes)</p>
+      </div>
+
+      <!-- Custom Focus Minutes Input -->
+      <div class="mb-5">
+        <label class="block text-xs uppercase font-sans font-semibold text-neutral-400 mb-2 tracking-wider">
+          Focus Duration (Minutes)
+        </label>
+        <div class="flex items-center justify-between bg-black border border-surface-border rounded-2xl px-4 py-2">
+          <input 
+            id="customPomoFocus" 
+            type="number" 
+            min="1" 
+            max="300" 
+            value="25" 
+            placeholder="e.g. 25"
+            class="w-full bg-transparent text-white font-mono text-2xl font-bold focus:outline-none placeholder:text-neutral-600"
+          >
+          <span class="text-xs font-mono text-[#D97757] font-bold uppercase tracking-wider pl-2">MIN</span>
+        </div>
+      </div>
+
+      <!-- Custom Break Minutes Input -->
+      <div class="mb-8">
+        <label class="block text-xs uppercase font-sans font-semibold text-neutral-400 mb-2 tracking-wider">
+          Break Duration (Minutes)
+        </label>
+        <div class="flex items-center justify-between bg-black border border-surface-border rounded-2xl px-4 py-2">
+          <input 
+            id="customPomoBreak" 
+            type="number" 
+            min="1" 
+            max="180" 
+            value="5" 
+            placeholder="e.g. 5"
+            class="w-full bg-transparent text-white font-mono text-2xl font-bold focus:outline-none placeholder:text-neutral-600"
+          >
+          <span class="text-xs font-mono text-[#D97757] font-bold uppercase tracking-wider pl-2">MIN</span>
+        </div>
+      </div>
+
+      <!-- Launch Button -->
+      <button onclick="startPomodoroWorkflow()" class="btn-claude w-full py-4 rounded-2xl text-lg font-display tracking-widest flex items-center justify-center gap-2">
+        <i class="fa-solid fa-play text-sm"></i>
+        <span>START POMODORO</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 1.6: MINIMAL POMODORO TIMER RUNNER                  -->
+  <!-- ======================================================== -->
+  <section id="view-pomo-running" class="hidden fixed inset-0 w-full h-full flex flex-col items-center justify-center px-4">
+    <!-- Dead-Centered Minimal Display (Goes blank/clean after 10s idle) -->
+    <div id="pomoDisplayWrap" class="text-center flex flex-col items-center justify-center origin-center transition-transform duration-75 select-none">
+      <p id="pomoPhaseLabel" class="text-xs sm:text-sm font-sans tracking-[0.3em] uppercase theme-accent-text font-bold mb-2">
+        FOCUS SESSION
+      </p>
+      <div class="hero-digits text-[23vw] sm:text-[18vw] font-bold text-white tracking-tight flex items-baseline justify-center leading-none drop-shadow-2xl">
+        <span id="pomoMinutes">25</span>
+        <span class="theme-accent-text mx-1 sm:mx-2">:</span>
+        <span id="pomoSeconds">00</span>
+      </div>
+    </div>
+
+    <!-- Minimal Lower Control Bar (Fades out after 10s inactivity) -->
+    <div class="fade-ui fixed bottom-6 sm:bottom-8 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
+      <button id="pomoPauseBtn" onclick="togglePomoPause()" class="btn-claude py-3 px-6 rounded-2xl text-xs sm:text-sm min-w-[120px] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-pause"></i> <span id="pomoPauseBtnText">PAUSE</span>
+      </button>
+      <button onclick="stopAndExitPomodoro()" class="btn-claude-outline py-3 px-6 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-stop"></i> <span>STOP</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 2: DEDICATED CLOCK PAGE                            -->
+  <!-- ======================================================== -->
+  <section id="view-clock" class="hidden fixed inset-0 w-full h-full flex flex-col items-center justify-center px-4">
+    <!-- Giant Bold Ambient Clock - Perfectly Centered Viewport Anchor -->
+    <div id="clockDisplayWrap" class="text-center flex flex-col items-center justify-center origin-center transition-transform duration-75 select-none">
+      <div class="hero-digits text-[22vw] sm:text-[18vw] font-bold text-white tracking-tight flex items-baseline justify-center leading-none drop-shadow-2xl">
+        <span id="clkHours">12</span>
+        <span class="theme-accent-text mx-1 sm:mx-2 animate-pulse">:</span>
+        <span id="clkMinutes">00</span>
+        <span class="theme-accent-text mx-1 sm:mx-2 animate-pulse">:</span>
+        <span id="clkSeconds">00</span>
+        <span id="clkAmPm" class="text-[6vw] sm:text-[4vw] theme-accent-text ml-3 font-display">PM</span>
+      </div>
+      <p id="clkDate" class="text-sm sm:text-xl font-sans tracking-widest uppercase text-neutral-400 mt-4 font-semibold">
+        MONDAY, OCTOBER 31
+      </p>
+    </div>
+
+    <!-- Lower Controls Bar (Fades out after 10s inactivity) -->
+    <div class="fade-ui fixed bottom-6 sm:bottom-8 left-0 right-0 z-30 flex items-center justify-center gap-3 px-4">
+      <button onclick="toggleClock12_24()" class="btn-claude-outline py-3 px-6 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
+        <i class="fa-solid fa-repeat"></i> <span id="clkFormatLabel">SWITCH TO 24H</span>
+      </button>
+      <button onclick="copyCurrentTime()" class="btn-claude py-3 px-6 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
+        <i class="fa-regular fa-copy"></i> <span id="copyClockBtnText">COPY TIME</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 3: DEDICATED TIMER PAGE                            -->
+  <!-- ======================================================== -->
+  <section id="view-timer" class="hidden fixed inset-0 w-full h-full flex flex-col items-center justify-center px-4">
+    <!-- Giant Interactive Bold Timer Digits (Clutter-free click-to-edit) -->
+    <div id="timerDisplayWrap" class="text-center flex flex-col items-center justify-center origin-center transition-transform duration-75 select-none">
+      <div onclick="openTimerModal()" title="Click to adjust time" class="cursor-pointer group flex flex-col items-center">
+        <div class="hero-digits text-[23vw] sm:text-[18vw] font-bold text-white tracking-tight flex items-baseline justify-center leading-none group-hover:text-neutral-200 transition-colors drop-shadow-2xl">
+          <span id="tmHours">00</span>
+          <span class="theme-accent-text mx-1 sm:mx-2">:</span>
+          <span id="tmMinutes">05</span>
+          <span class="theme-accent-text mx-1 sm:mx-2">:</span>
+          <span id="tmSeconds">00</span>
+        </div>
+      </div>
+
+      <!-- Completion Alert text -->
+      <div id="tmAlertText" class="hidden mt-6 text-xl sm:text-2xl font-display tracking-widest theme-accent-text animate-bounce">
+        TIME'S UP!
+      </div>
+    </div>
+
+    <!-- Lower Controls Bar (Fades out after 10s inactivity) -->
+    <div class="fade-ui fixed bottom-6 sm:bottom-8 left-0 right-0 z-30 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 px-4 max-w-xl mx-auto">
+      <button id="tmStartBtn" onclick="timerToggleStartResume()" class="btn-claude py-3 px-6 rounded-2xl text-xs sm:text-sm min-w-[120px] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-play"></i> <span>START</span>
+      </button>
+
+      <button id="tmPauseBtn" onclick="timerPause()" disabled class="btn-claude py-3 px-6 rounded-2xl text-xs sm:text-sm min-w-[120px] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-pause"></i> <span>PAUSE</span>
+      </button>
+
+      <button id="tmStopBtn" onclick="timerStop()" disabled class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-stop"></i> <span>STOP</span>
+      </button>
+
+      <button id="tmRestartBtn" onclick="timerRestart()" disabled class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rotate-left"></i> <span>RESTART</span>
+      </button>
+
+      <button id="tmResetBtn" onclick="timerReset()" class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrow-rotate-left"></i> <span>RESET</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- VIEW 4: DEDICATED STOPWATCH PAGE                        -->
+  <!-- ======================================================== -->
+  <section id="view-stopwatch" class="hidden fixed inset-0 w-full h-full flex flex-col items-center justify-center px-4">
+    <!-- Giant Bold Stopwatch Digits -->
+    <div id="stopwatchDisplayWrap" class="text-center flex flex-col items-center justify-center origin-center transition-transform duration-75 select-none max-w-full">
+      <div class="hero-digits text-[20vw] sm:text-[17vw] font-bold text-white tracking-tight flex items-baseline justify-center leading-none drop-shadow-2xl">
+        <span id="swMinutes">00</span>
+        <span class="theme-accent-text mx-0.5 sm:mx-1">:</span>
+        <span id="swSeconds">00</span>
+        <span class="theme-accent-text mx-0.5 sm:mx-1">.</span>
+        <span id="swMillis" class="text-[12vw] sm:text-[10vw] text-neutral-400 w-[2ch] text-left">00</span>
+      </div>
+
+      <!-- Compact Lap Feed Overlay (Only visible when active & laps exist) -->
+      <div id="swLapBox" class="fade-ui hidden max-h-32 w-full max-w-md overflow-y-auto mt-4 px-2 space-y-1.5 font-mono text-xs">
+        <!-- Injected Laps -->
+      </div>
+    </div>
+
+    <!-- Lower Controls Bar (Fades out after 10s inactivity) -->
+    <div class="fade-ui fixed bottom-6 sm:bottom-8 left-0 right-0 z-30 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4 px-4 max-w-xl mx-auto">
+      <button id="swStartBtn" onclick="stopwatchToggleStartResume()" class="btn-claude py-3 px-6 rounded-2xl text-xs sm:text-sm min-w-[120px] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-play"></i> <span>START</span>
+      </button>
+
+      <button id="swPauseBtn" onclick="stopwatchPause()" disabled class="btn-claude py-3 px-6 rounded-2xl text-xs sm:text-sm min-w-[120px] flex items-center justify-center gap-2">
+        <i class="fa-solid fa-pause"></i> <span>PAUSE</span>
+      </button>
+
+      <button id="swLapBtn" onclick="stopwatchLap()" disabled class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-flag"></i> <span>LAP</span>
+      </button>
+
+      <button id="swStopBtn" onclick="stopwatchStop()" disabled class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-stop"></i> <span>STOP</span>
+      </button>
+
+      <button id="swRestartBtn" onclick="stopwatchRestart()" disabled class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rotate-left"></i> <span>RESTART</span>
+      </button>
+
+      <button id="swResetBtn" onclick="stopwatchReset()" disabled class="btn-claude-outline py-3 px-5 rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-arrow-rotate-left"></i> <span>RESET</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CLICK-TO-SET TIME DIALOG (Vanshes on Apply)      -->
+  <!-- ======================================================== -->
+  <div id="timerModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface-elevated border border-surface-border w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+      
+      <!-- Close icon -->
+      <button onclick="closeTimerModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white transition-colors w-8 h-8 rounded-full flex items-center justify-center border border-neutral-800">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center mb-6">
+        <h3 class="hero-digits text-3xl sm:text-4xl text-white">SET TIMER</h3>
+        <p class="text-xs text-neutral-400 font-sans uppercase tracking-wider">Configure duration & apply</p>
+      </div>
+
+      <!-- Quick Preset Pills -->
+      <div class="grid grid-cols-4 gap-2 mb-6">
+        <button onclick="applyTimerPreset(1)" class="btn-claude-outline py-2 rounded-xl text-xs font-mono font-semibold">+1m</button>
+        <button onclick="applyTimerPreset(5)" class="btn-claude-outline py-2 rounded-xl text-xs font-mono font-semibold">+5m</button>
+        <button onclick="applyTimerPreset(10)" class="btn-claude-outline py-2 rounded-xl text-xs font-mono font-semibold">+10m</button>
+        <button onclick="applyTimerPreset(25)" class="btn-claude-outline py-2 rounded-xl text-xs font-mono font-semibold">+25m</button>
+      </div>
+
+      <!-- Numeric Dial Inputs -->
+      <div class="flex items-center justify-center gap-3 font-mono mb-8">
+        <div class="flex flex-col items-center">
+          <input id="modalHours" type="number" min="0" max="99" value="0" class="w-18 bg-black border border-surface-border text-center text-3xl font-bold py-3 rounded-2xl text-white focus:outline-none focus:border-[#D97757]">
+          <span class="text-[10px] text-neutral-400 mt-1 uppercase font-sans tracking-widest font-semibold">Hours</span>
+        </div>
+        <span class="theme-accent-text text-2xl font-bold mb-5">:</span>
+        
+        <div class="flex flex-col items-center">
+          <input id="modalMinutes" type="number" min="0" max="59" value="5" class="w-18 bg-black border border-surface-border text-center text-3xl font-bold py-3 rounded-2xl text-white focus:outline-none focus:border-[#D97757]">
+          <span class="text-[10px] text-neutral-400 mt-1 uppercase font-sans tracking-widest font-semibold">Min</span>
+        </div>
+        <span class="theme-accent-text text-2xl font-bold mb-5">:</span>
+
+        <div class="flex flex-col items-center">
+          <input id="modalSeconds" type="number" min="0" max="59" value="0" class="w-18 bg-black border border-surface-border text-center text-3xl font-bold py-3 rounded-2xl text-white focus:outline-none focus:border-[#D97757]">
+          <span class="text-[10px] text-neutral-400 mt-1 uppercase font-sans tracking-widest font-semibold">Sec</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button onclick="confirmTimerInput(false)" class="btn-claude-outline w-1/2 py-3 rounded-2xl text-xs sm:text-sm font-bold">
+          DONE
+        </button>
+        <button onclick="confirmTimerInput(true)" class="btn-claude w-1/2 py-3 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+          <i class="fa-solid fa-play text-xs"></i> <span>SET & START</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: POMODORO RESTART CONFIRMATION DIALOG              -->
+  <!-- ======================================================== -->
+  <div id="pomoRestartModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface-elevated border border-surface-border w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-full bg-claude-subtle border border-[#D97757] flex items-center justify-center mx-auto mb-4 theme-accent-text text-lg">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <h3 class="hero-digits text-3xl text-white tracking-wide mb-1">BREAK COMPLETE</h3>
+      <p class="text-xs text-neutral-400 font-sans uppercase tracking-wider mb-6">Do you want to restart?</p>
+
+      <div class="flex flex-col gap-2.5">
+        <button onclick="handlePomoRestart(true)" class="btn-claude w-full py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rotate-left text-xs"></i>
+          <span>RESTART POMODORO</span>
+        </button>
+        <button onclick="handlePomoRestart(false)" class="btn-claude-outline w-full py-3 rounded-xl text-xs sm:text-sm font-bold">
+          <span>BACK TO CONFIG</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-surface-card border theme-accent-border text-white text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 font-sans">
+    <i class="fa-solid fa-check theme-accent-text"></i>
+    <span id="toastMsg">Action confirmed</span>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT STATE ENGINE & INTERACTION LOGIC             -->
+  <!-- ======================================================== -->
+  <script>
+    // -------------------------------------------------------------
+    // LOCAL DATA STORAGE & ACTIVITY RECORDER
+    // -------------------------------------------------------------
+    // Stores in memory, synced optionally to a local file on PC or JSON
+    let activities = [];
+    let fileHandle = null;
+
+    function recordActivity(type, durationSeconds, details = {}) {
+      const entry = {
+        id: 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        timestamp: new Date().toISOString(),
+        type: type, // 'pomodoro-focus' | 'pomodoro-break' | 'timer' | 'stopwatch'
+        duration: Math.round(durationSeconds),
+        details: details
+      };
+
+      activities.unshift(entry);
+      saveToConnectedStorage();
+      if (currentView === 'analytics') {
+        renderAnalyticsView();
+      }
+    }
+
+    // Save to local file if connected, otherwise maintain in browser memory
+    async function saveToConnectedStorage() {
+      if (fileHandle) {
+        try {
+          const writable = await fileHandle.createWritable();
+          await writable.write(JSON.stringify(activities, null, 2));
+          await writable.close();
+        } catch (err) {
+          console.warn("Could not write to local file handle", err);
+        }
+      }
+    }
+
+    // Connect / Select a local file on disk using File System Access API
+    async function syncLocalFile() {
+      if ('showSaveFilePicker' in window) {
+        try {
+          const opts = {
+            suggestedName: 'chronos_activity_data.json',
+            types: [{
+              description: 'JSON Data File',
+              accept: { 'application/json': ['.json'] }
+            }]
+          };
+          fileHandle = await window.showSaveFilePicker(opts);
+          await saveToConnectedStorage();
+          document.getElementById('syncFileBtnText').textContent = "FILE CONNECTED";
+          document.getElementById('syncFileBtn').classList.add('bg-emerald-600');
+          showToast("Connected to local file!");
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            showToast("Local file selection failed");
+          }
+        }
+      } else {
+        // Fallback for browsers without File System Access API
+        exportDataJSON();
+        showToast("File System API not supported; exported JSON file instead");
+      }
+    }
+
+    function exportDataJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activities, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `chronos_activities_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Activity data exported to PC");
+    }
+
+    function importDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (Array.isArray(parsed)) {
+            activities = parsed;
+            renderAnalyticsView();
+            showToast(`Imported ${activities.length} records!`);
+          } else {
+            showToast("Invalid JSON format");
+          }
+        } catch(err) {
+          showToast("Error reading file");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearActivityHistory() {
+      if (activities.length === 0) return;
+      activities = [];
+      saveToConnectedStorage();
+      renderAnalyticsView();
+      showToast("Activity history cleared");
+    }
+
+    // -------------------------------------------------------------
+    // ANALYTICS & GRAPH ENGINE
+    // -------------------------------------------------------------
+    let analyticsFilter = 'all'; // 'all' | '3days' | 'week' | 'month'
+    let activityChartInstance = null;
+
+    function setAnalyticsFilter(mode) {
+      analyticsFilter = mode;
+      document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.className = "filter-pill btn-claude-outline py-1.5 px-4 rounded-xl text-xs font-mono";
+      });
+      const activeBtn = document.getElementById(`filter-${mode}`);
+      if (activeBtn) {
+        activeBtn.className = "filter-pill btn-claude py-1.5 px-4 rounded-xl text-xs font-mono";
+      }
+      renderAnalyticsView();
+    }
+
+    function getFilteredActivities() {
+      const now = new Date();
+      if (analyticsFilter === '3days') {
+        const threshold = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+        return activities.filter(a => new Date(a.timestamp) >= threshold);
+      } else if (analyticsFilter === 'week') {
+        const threshold = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+        return activities.filter(a => new Date(a.timestamp) >= threshold);
+      } else if (analyticsFilter === 'month') {
+        const threshold = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        return activities.filter(a => new Date(a.timestamp) >= threshold);
+      }
+      return activities;
+    }
+
+    function renderAnalyticsView() {
+      const filtered = getFilteredActivities();
+
+      // Compute statistics
+      let focusSec = 0;
+      let breakSec = 0;
+      let pomoCount = 0;
+      let swSec = 0;
+
+      filtered.forEach(item => {
+        if (item.type === 'pomodoro-focus') {
+          focusSec += item.duration;
+          pomoCount++;
+        } else if (item.type === 'pomodoro-break') {
+          breakSec += item.duration;
+        } else if (item.type === 'timer') {
+          focusSec += item.duration;
+        } else if (item.type === 'stopwatch') {
+          swSec += item.duration;
+        }
+      });
+
+      document.getElementById('statFocusTime').textContent = formatDurationShort(focusSec);
+      document.getElementById('statBreakTime').textContent = formatDurationShort(breakSec);
+      document.getElementById('statPomoCount').textContent = pomoCount;
+      document.getElementById('statStopwatchTime').textContent = formatDurationShort(swSec);
+
+      // Render Table Rows
+      const tbody = document.getElementById('activityLogTbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-neutral-500 font-sans">No recorded activities in this timeframe. Complete a session to see it here!</td></tr>`;
+      } else {
+        tbody.innerHTML = filtered.map(a => {
+          const d = new Date(a.timestamp);
+          const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          let badgeColor = "theme-accent-text";
+          let label = a.type.replace('-', ' ').toUpperCase();
+          if (a.type === 'pomodoro-break') badgeColor = "text-emerald-400";
+          if (a.type === 'stopwatch') badgeColor = "text-cyan-400";
+
+          return `
+            <tr>
+              <td class="py-2.5 px-3 text-neutral-400">${dateStr}</td>
+              <td class="py-2.5 px-3 font-bold ${badgeColor}">${label}</td>
+              <td class="py-2.5 px-3 font-semibold text-white">${formatDurationShort(a.duration)}</td>
+              <td class="py-2.5 px-3 text-neutral-500 text-[11px]">${a.details.note || '--'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Update Chart.js Instance
+      renderChart(filtered);
+    }
+
+    function formatDurationShort(totalSeconds) {
+      if (totalSeconds < 60) return `${totalSeconds}s`;
+      const mins = Math.floor(totalSeconds / 60);
+      if (mins < 60) return `${mins}m`;
+      const hrs = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      return `${hrs}h ${remMins}m`;
+    }
+
+    function renderChart(data) {
+      const ctx = document.getElementById('activityChart');
+      if (!ctx) return;
+
+      // Group focus minutes by date (YYYY-MM-DD)
+      const dayMap = {};
+      // Fill last 7 days baseline
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(Date.now() - (i * 24 * 60 * 60 * 1000));
+        const key = d.toISOString().slice(0, 10);
+        dayMap[key] = 0;
+      }
+
+      data.forEach(item => {
+        if (item.type === 'pomodoro-focus' || item.type === 'timer') {
+          const key = item.timestamp.slice(0, 10);
+          const mins = Math.round(item.duration / 60);
+          dayMap[key] = (dayMap[key] || 0) + mins;
+        }
+      });
+
+      const labels = Object.keys(dayMap).map(k => {
+        const parts = k.split('-');
+        return `${parts[1]}/${parts[2]}`;
+      });
+      const values = Object.values(dayMap);
+
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#D97757';
+
+      if (activityChartInstance) {
+        activityChartInstance.destroy();
+      }
+
+      activityChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Focus Minutes',
+            data: values,
+            backgroundColor: accent,
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#141414',
+              borderColor: '#333',
+              borderWidth: 1,
+              titleFont: { family: 'Space Grotesk' },
+              bodyFont: { family: 'JetBrains Mono' }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#777', font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            y: {
+              grid: { color: '#1a1a1a' },
+              ticks: { color: '#777', font: { family: 'JetBrains Mono', size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // THEME & COLOR PALETTE ENGINE
+    // -------------------------------------------------------------
+    function hexToRgb(hex) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const num = parseInt(c, 16);
+      return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+      };
+    }
+
+    function adjustBrightness(hex, percent) {
+      const rgb = hexToRgb(hex);
+      const r = Math.min(255, Math.max(0, Math.round(rgb.r * (1 + percent / 100))));
+      const g = Math.min(255, Math.max(0, Math.round(rgb.g * (1 + percent / 100))));
+      const b = Math.min(255, Math.max(0, Math.round(rgb.b * (1 + percent / 100))));
+      return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    }
+
+    function setThemeAccent(hexColor) {
+      if (!/^#([0-9A-Fa-f]{3}){1,2}$/.test(hexColor)) return;
+
+      const root = document.documentElement;
+      const rgb = hexToRgb(hexColor);
+      const hoverColor = adjustBrightness(hexColor, -10);
+      const activeColor = adjustBrightness(hexColor, -20);
+
+      root.style.setProperty('--accent-color', hexColor);
+      root.style.setProperty('--accent-hover', hoverColor);
+      root.style.setProperty('--accent-active', activeColor);
+      root.style.setProperty('--accent-subtle', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`);
+      root.style.setProperty('--accent-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`);
+
+      document.getElementById('themeColorInput').value = hexColor;
+      document.getElementById('themeHexInput').value = hexColor.replace('#', '').toUpperCase();
+
+      if (activityChartInstance) {
+        renderChart(getFilteredActivities());
+      }
+    }
+
+    function handleColorPickerChange(hex) {
+      setThemeAccent(hex);
+    }
+
+    function handleHexInputChange(val) {
+      let cleaned = val.replace(/[^0-9A-Fa-f]/g, '');
+      if (cleaned.length === 6) {
+        setThemeAccent('#' + cleaned);
+      }
+    }
+
+    function resetThemeToDefault() {
+      setThemeAccent('#D97757');
+      showToast("Reset to Claude Terracotta");
+    }
+
+    // -------------------------------------------------------------
+    // DISPLAY SCALING ENGINE
+    // -------------------------------------------------------------
+    let currentDisplayScale = 1.0;
+
+    function adjustDigitScale(val) {
+      currentDisplayScale = parseFloat(val);
+      const wrappers = ['clockDisplayWrap', 'timerDisplayWrap', 'stopwatchDisplayWrap', 'pomoDisplayWrap'];
+      wrappers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.transform = `scale(${currentDisplayScale})`;
+        }
+      });
+      wakeUpUI();
+    }
+
+    // -------------------------------------------------------------
+    // 1. PAGE ROUTING & NAVIGATION
+    // -------------------------------------------------------------
+    let currentView = 'menu';
+
+    function navigateTo(viewId) {
+      currentView = viewId;
+      
+      const views = ['menu', 'timer-choice', 'pomo-setup', 'pomo-running', 'clock', 'timer', 'stopwatch', 'analytics', 'theme'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (!el) return;
+        if (v === viewId) {
+          el.classList.remove('hidden');
+          el.classList.add('flex');
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        }
+      });
+
+      const topNav = document.getElementById('topNav');
+      const clockFormatToggle = document.getElementById('clockFormatToggle');
+
+      if (viewId === 'menu') {
+        topNav.classList.add('hidden');
+        resetIdleTimer();
+      } else {
+        topNav.classList.remove('hidden');
+        clockFormatToggle.classList.toggle('hidden', viewId !== 'clock');
+        resetIdleTimer();
+      }
+
+      if (viewId === 'analytics') {
+        renderAnalyticsView();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 2. 10-SECOND INACTIVITY AUTO-FADE
+    // -------------------------------------------------------------
+    let idleTimeout = null;
+    const IDLE_DURATION = 10000; // 10 seconds
+
+    function wakeUpUI() {
+      if (document.body.classList.contains('user-idle')) {
+        document.body.classList.remove('user-idle');
+      }
+      resetIdleTimer();
+    }
+
+    function resetIdleTimer() {
+      clearTimeout(idleTimeout);
+      const hasModalOpen = !document.getElementById('timerModal').classList.contains('hidden') ||
+                           !document.getElementById('pomoRestartModal').classList.contains('hidden');
+
+      if (currentView !== 'menu' && currentView !== 'timer-choice' && currentView !== 'pomo-setup' && currentView !== 'analytics' && currentView !== 'theme' && !hasModalOpen) {
+        idleTimeout = setTimeout(() => {
+          document.body.classList.add('user-idle');
+        }, IDLE_DURATION);
+      }
+    }
+
+    // Bind multiple user activity events
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+      window.addEventListener(evt, wakeUpUI, { passive: true });
+    });
+
+    // -------------------------------------------------------------
+    // 3. TRUE FULLSCREEN TOGGLE
+    // -------------------------------------------------------------
+    function toggleFullScreen() {
+      const fsIcon = document.getElementById('fsIcon');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          fsIcon.className = "fa-solid fa-compress text-sm";
+          showToast("Entered Fullscreen");
+        }).catch(() => {
+          showToast("Fullscreen unavailable");
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().then(() => {
+            fsIcon.className = "fa-solid fa-expand text-sm";
+            showToast("Exited Fullscreen");
+          });
+        }
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const fsIcon = document.getElementById('fsIcon');
+      if (!document.fullscreenElement) {
+        fsIcon.className = "fa-solid fa-expand text-sm";
+      } else {
+        fsIcon.className = "fa-solid fa-compress text-sm";
+      }
+    });
+
+    // -------------------------------------------------------------
+    // 4. ACOUSTIC BELL SOUND ENGINE (Web Audio API Synthesizer)
+    // -------------------------------------------------------------
+    let audioContext = null;
+
+    function playAcousticBell() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!audioContext) audioContext = new AudioCtx();
+        if (audioContext.state === 'suspended') audioContext.resume();
+
+        const now = audioContext.currentTime;
+        
+        // Bell struck fundamentals and harmonics
+        const frequencies = [587.33, 880.00, 1174.66, 1760.00];
+        const gains = [0.35, 0.2, 0.1, 0.04];
+        const decays = [2.2, 1.8, 1.3, 0.9];
+
+        frequencies.forEach((freq, idx) => {
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          // Attack & Exponential Decrescendo
+          gainNode.gain.setValueAtTime(0, now);
+          gainNode.gain.linearRampToValueAtTime(gains[idx], now + 0.015);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, now + decays[idx]);
+
+          osc.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          osc.start(now);
+          osc.stop(now + decays[idx]);
+        });
+      } catch (e) {
+        console.warn('Audio output blocked or uninitialized', e);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. POMODORO WORKFLOW & ACTIVITY LOGGING
+    // -------------------------------------------------------------
+    let pomoFocusMinutes = 25;
+    let pomoBreakMinutes = 5;
+    let pomoPhase = 'focus'; // 'focus' | 'break'
+    let pomoRemainingSec = 25 * 60;
+    let pomoInterval = null;
+    let pomoIsPaused = false;
+    let pomoElapsedThisPhase = 0;
+
+    function startPomodoroWorkflow() {
+      const focusVal = parseInt(document.getElementById('customPomoFocus').value, 10);
+      const breakVal = parseInt(document.getElementById('customPomoBreak').value, 10);
+
+      if (isNaN(focusVal) || focusVal <= 0) {
+        showToast("Please enter a valid focus duration");
+        return;
+      }
+      if (isNaN(breakVal) || breakVal <= 0) {
+        showToast("Please enter a valid break duration");
+        return;
+      }
+
+      pomoFocusMinutes = focusVal;
+      pomoBreakMinutes = breakVal;
+      pomoPhase = 'focus';
+      pomoRemainingSec = pomoFocusMinutes * 60;
+      pomoElapsedThisPhase = 0;
+      pomoIsPaused = false;
+
+      updatePomoDisplay();
+      document.getElementById('pomoPhaseLabel').textContent = "FOCUS SESSION";
+      document.getElementById('pomoPauseBtnText').textContent = "PAUSE";
+      document.getElementById('pomoPauseBtn').querySelector('i').className = "fa-solid fa-pause";
+
+      navigateTo('pomo-running');
+
+      clearInterval(pomoInterval);
+      pomoInterval = setInterval(pomoTick, 1000);
+    }
+
+    function updatePomoDisplay() {
+      const m = Math.floor(pomoRemainingSec / 60);
+      const s = pomoRemainingSec % 60;
+      document.getElementById('pomoMinutes').textContent = String(m).padStart(2, '0');
+      document.getElementById('pomoSeconds').textContent = String(s).padStart(2, '0');
+    }
+
+    function pomoTick() {
+      if (pomoRemainingSec > 0) {
+        pomoRemainingSec--;
+        pomoElapsedThisPhase++;
+        updatePomoDisplay();
+      }
+
+      if (pomoRemainingSec <= 0) {
+        clearInterval(pomoInterval);
+        playAcousticBell();
+        wakeUpUI();
+
+        if (pomoPhase === 'focus') {
+          // Log Focus Session Completion
+          recordActivity('pomodoro-focus', pomoElapsedThisPhase, { note: `Completed ${pomoFocusMinutes}m Focus` });
+          pomoPhase = 'break';
+          pomoRemainingSec = pomoBreakMinutes * 60;
+          pomoElapsedThisPhase = 0;
+          document.getElementById('pomoPhaseLabel').textContent = "BREAK TIME";
+          updatePomoDisplay();
+          showToast("Focus ended! Break starting...");
+          pomoInterval = setInterval(pomoTick, 1000);
+        } else {
+          // Log Break Completion
+          recordActivity('pomodoro-break', pomoElapsedThisPhase, { note: `Completed ${pomoBreakMinutes}m Break` });
+          document.getElementById('pomoRestartModal').classList.remove('hidden');
+        }
+      }
+    }
+
+    function togglePomoPause() {
+      wakeUpUI();
+      const btnText = document.getElementById('pomoPauseBtnText');
+      const btnIcon = document.getElementById('pomoPauseBtn').querySelector('i');
+
+      if (!pomoIsPaused) {
+        pomoIsPaused = true;
+        clearInterval(pomoInterval);
+        btnText.textContent = "RESUME";
+        btnIcon.className = "fa-solid fa-play";
+      } else {
+        pomoIsPaused = false;
+        clearInterval(pomoInterval);
+        pomoInterval = setInterval(pomoTick, 1000);
+        btnText.textContent = "PAUSE";
+        btnIcon.className = "fa-solid fa-pause";
+      }
+    }
+
+    function stopAndExitPomodoro() {
+      clearInterval(pomoInterval);
+      pomoIsPaused = false;
+      // Record any partial focus time if over 30s
+      if (pomoElapsedThisPhase >= 30) {
+        const type = pomoPhase === 'focus' ? 'pomodoro-focus' : 'pomodoro-break';
+        recordActivity(type, pomoElapsedThisPhase, { note: `Partial session stopped` });
+      }
+      pomoElapsedThisPhase = 0;
+      navigateTo('pomo-setup');
+    }
+
+    function handlePomoRestart(shouldRestart) {
+      document.getElementById('pomoRestartModal').classList.add('hidden');
+      if (shouldRestart) {
+        startPomodoroWorkflow();
+      } else {
+        navigateTo('pomo-setup');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 6. CLOCK PAGE LOGIC
+    // -------------------------------------------------------------
+    let is24Hour = false;
+
+    function toggleClock12_24() {
+      is24Hour = !is24Hour;
+      document.getElementById('clkFormatLabel').textContent = is24Hour ? "SWITCH TO 12H" : "SWITCH TO 24H";
+      document.getElementById('clockFormatToggle').textContent = is24Hour ? "24H" : "12H";
+      updateClockDisplay();
+      showToast(is24Hour ? "Switched to 24H Mode" : "Switched to 12H Mode");
+    }
+
+    function updateClockDisplay() {
+      const now = new Date();
+      let hours = now.getHours();
+      const mins = now.getMinutes();
+      const secs = now.getSeconds();
+      let ampm = "";
+
+      if (!is24Hour) {
+        ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        hours = hours ? hours : 12; // 0 should be 12
+        document.getElementById('clkAmPm').textContent = ampm;
+        document.getElementById('clkAmPm').classList.remove('hidden');
+      } else {
+        document.getElementById('clkAmPm').classList.add('hidden');
+      }
+
+      document.getElementById('clkHours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('clkMinutes').textContent = String(mins).padStart(2, '0');
+      document.getElementById('clkSeconds').textContent = String(secs).padStart(2, '0');
+
+      const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+      document.getElementById('clkDate').textContent = now.toLocaleDateString(undefined, options).toUpperCase();
+    }
+
+    function copyCurrentTime() {
+      const h = document.getElementById('clkHours').textContent;
+      const m = document.getElementById('clkMinutes').textContent;
+      const s = document.getElementById('clkSeconds').textContent;
+      const ampm = !is24Hour ? ` ${document.getElementById('clkAmPm').textContent}` : '';
+      const textToCopy = `${h}:${m}:${s}${ampm}`;
+
+      const tempInput = document.createElement("input");
+      tempInput.value = textToCopy;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        showToast(`Copied: ${textToCopy}`);
+      } catch (err) {
+        showToast("Failed to copy");
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    // -------------------------------------------------------------
+    // 6.5 TIMER PAGE LOGIC & MODAL
+    // -------------------------------------------------------------
+    let tmTotalSec = 300; // 5 mins default
+    let tmRemainingSec = 300;
+    let tmInterval = null;
+    let tmRunning = false;
+    let tmElapsed = 0;
+
+    function openTimerModal() {
+      wakeUpUI();
+      const h = Math.floor(tmRemainingSec / 3600);
+      const m = Math.floor((tmRemainingSec % 3600) / 60);
+      const s = tmRemainingSec % 60;
+
+      document.getElementById('modalHours').value = h;
+      document.getElementById('modalMinutes').value = m;
+      document.getElementById('modalSeconds').value = s;
+      document.getElementById('timerModal').classList.remove('hidden');
+    }
+
+    function closeTimerModal() {
+      document.getElementById('timerModal').classList.add('hidden');
+      resetIdleTimer();
+    }
+
+    function applyTimerPreset(mins) {
+      document.getElementById('modalHours').value = 0;
+      document.getElementById('modalMinutes').value = mins;
+      document.getElementById('modalSeconds').value = 0;
+    }
+
+    function confirmTimerInput(startImmediately) {
+      const h = parseInt(document.getElementById('modalHours').value) || 0;
+      const m = parseInt(document.getElementById('modalMinutes').value) || 0;
+      const s = parseInt(document.getElementById('modalSeconds').value) || 0;
+      const total = (h * 3600) + (m * 60) + s;
+
+      if (total <= 0) {
+        showToast("Please enter duration greater than 0");
+        return;
+      }
+
+      tmTotalSec = total;
+      tmRemainingSec = total;
+      tmElapsed = 0;
+      updateTimerRender(tmRemainingSec);
+      closeTimerModal();
+      timerStop();
+
+      if (startImmediately) {
+        timerToggleStartResume();
+      } else {
+        updateTimerControlsUI('IDLE');
+      }
+    }
+
+    function updateTimerRender(totalSec) {
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      document.getElementById('tmHours').textContent = String(h).padStart(2, '0');
+      document.getElementById('tmMinutes').textContent = String(m).padStart(2, '0');
+      document.getElementById('tmSeconds').textContent = String(s).padStart(2, '0');
+    }
+
+    function timerToggleStartResume() {
+      wakeUpUI();
+      if (!tmRunning) {
+        if (tmRemainingSec <= 0) {
+          tmRemainingSec = tmTotalSec > 0 ? tmTotalSec : 300;
+        }
+        document.getElementById('tmAlertText').classList.add('hidden');
+        tmRunning = true;
+        clearInterval(tmInterval);
+        tmInterval = setInterval(timerTick, 1000);
+        updateTimerControlsUI('RUNNING');
+      }
+    }
+
+    function timerTick() {
+      if (tmRemainingSec > 0) {
+        tmRemainingSec--;
+        tmElapsed++;
+        updateTimerRender(tmRemainingSec);
+      }
+      if (tmRemainingSec <= 0) {
+        clearInterval(tmInterval);
+        tmRunning = false;
+        playAcousticBell();
+        wakeUpUI();
+        document.getElementById('tmAlertText').classList.remove('hidden');
+        updateTimerControlsUI('FINISHED');
+        recordActivity('timer', tmElapsed, { note: `Countdown reached 00:00` });
+        tmElapsed = 0;
+      }
+    }
+
+    function timerPause() {
+      wakeUpUI();
+      if (tmRunning) {
+        tmRunning = false;
+        clearInterval(tmInterval);
+        updateTimerControlsUI('PAUSED');
+      }
+    }
+
+    function timerStop() {
+      wakeUpUI();
+      clearInterval(tmInterval);
+      tmRunning = false;
+      document.getElementById('tmAlertText').classList.add('hidden');
+      if (tmElapsed >= 10) {
+        recordActivity('timer', tmElapsed, { note: `Timer stopped early` });
+      }
+      tmElapsed = 0;
+      updateTimerControlsUI('STOPPED');
+    }
+
+    function timerReset() {
+      wakeUpUI();
+      clearInterval(tmInterval);
+      tmRunning = false;
+      tmRemainingSec = tmTotalSec;
+      tmElapsed = 0;
+      updateTimerRender(tmRemainingSec);
+      document.getElementById('tmAlertText').classList.add('hidden');
+      updateTimerControlsUI('IDLE');
+    }
+
+    function timerRestart() {
+      timerReset();
+      timerToggleStartResume();
+    }
+
+    function updateTimerControlsUI(status) {
+      const startBtn = document.getElementById('tmStartBtn');
+      const pauseBtn = document.getElementById('tmPauseBtn');
+      const stopBtn = document.getElementById('tmStopBtn');
+      const restartBtn = document.getElementById('tmRestartBtn');
+      const resetBtn = document.getElementById('tmResetBtn');
+
+      if (status === 'RUNNING') {
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        stopBtn.disabled = false;
+        restartBtn.disabled = false;
+        resetBtn.disabled = false;
+      } else if (status === 'PAUSED') {
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RESUME</span>';
+        pauseBtn.disabled = true;
+        stopBtn.disabled = false;
+        restartBtn.disabled = false;
+        resetBtn.disabled = false;
+      } else if (status === 'STOPPED') {
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RESUME</span>';
+        pauseBtn.disabled = true;
+        stopBtn.disabled = true;
+        restartBtn.disabled = false;
+        resetBtn.disabled = false;
+      } else if (status === 'FINISHED') {
+        startBtn.disabled = true;
+        pauseBtn.disabled = true;
+        stopBtn.disabled = true;
+        restartBtn.disabled = false;
+        resetBtn.disabled = false;
+      } else { // IDLE
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>START</span>';
+        pauseBtn.disabled = true;
+        stopBtn.disabled = true;
+        restartBtn.disabled = true;
+        resetBtn.disabled = false;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 7. STOPWATCH PAGE LOGIC
+    // -------------------------------------------------------------
+    let swInterval = null;
+    let swStartTime = 0;
+    let swElapsedTime = 0;
+    let swRunning = false;
+    let swLaps = [];
+    let lastLapElapsed = 0;
+
+    function formatDigits(val) {
+      return String(val).padStart(2, '0');
+    }
+
+    function renderStopwatch(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      const centis = Math.floor((ms % 1000) / 10);
+
+      document.getElementById('swMinutes').textContent = formatDigits(mins);
+      document.getElementById('swSeconds').textContent = formatDigits(secs);
+      document.getElementById('swMillis').textContent = formatDigits(centis);
+    }
+
+    function stopwatchToggleStartResume() {
+      wakeUpUI();
+      if (!swRunning) {
+        swStartTime = performance.now() - swElapsedTime;
+        swInterval = requestAnimationFrame(stopwatchTick);
+        swRunning = true;
+        updateStopwatchControlsUI('RUNNING');
+      }
+    }
+
+    function stopwatchTick() {
+      if (!swRunning) return;
+      swElapsedTime = performance.now() - swStartTime;
+      renderStopwatch(swElapsedTime);
+      swInterval = requestAnimationFrame(stopwatchTick);
+    }
+
+    function stopwatchPause() {
+      wakeUpUI();
+      if (swRunning) {
+        swRunning = false;
+        cancelAnimationFrame(swInterval);
+        updateStopwatchControlsUI('PAUSED');
+      }
+    }
+
+    function stopwatchStop() {
+      wakeUpUI();
+      if (swRunning || swElapsedTime > 0) {
+        swRunning = false;
+        cancelAnimationFrame(swInterval);
+        if (swElapsedTime >= 1000) {
+          recordActivity('stopwatch', Math.round(swElapsedTime / 1000), { note: `${swLaps.length} laps tracked` });
+        }
+        updateStopwatchControlsUI('STOPPED');
+      }
+    }
+
+    function stopwatchReset() {
+      wakeUpUI();
+      swRunning = false;
+      cancelAnimationFrame(swInterval);
+      swElapsedTime = 0;
+      lastLapElapsed = 0;
+      swLaps = [];
+      renderStopwatch(0);
+      renderLaps();
+      updateStopwatchControlsUI('IDLE');
+    }
+
+    function stopwatchRestart() {
+      stopwatchReset();
+      stopwatchToggleStartResume();
+    }
+
+    function stopwatchLap() {
+      wakeUpUI();
+      if (!swRunning && swElapsedTime === 0) return;
+      const lapTime = swElapsedTime;
+      const splitTime = lapTime - lastLapElapsed;
+      lastLapElapsed = lapTime;
+
+      swLaps.unshift({
+        num: swLaps.length + 1,
+        total: formatLapTimestamp(lapTime),
+        split: formatLapTimestamp(splitTime)
+      });
+      renderLaps();
+    }
+
+    function formatLapTimestamp(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      const centis = Math.floor((ms % 1000) / 10);
+      return `${formatDigits(mins)}:${formatDigits(secs)}.${formatDigits(centis)}`;
+    }
+
+    function renderLaps() {
+      const box = document.getElementById('swLapBox');
+      if (swLaps.length === 0) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        return;
+      }
+      box.classList.remove('hidden');
+      box.innerHTML = swLaps.map(l => `
+        <div class="flex items-center justify-between py-1.5 px-3 bg-surface-card border border-neutral-900 rounded-xl text-neutral-300">
+          <span class="theme-accent-text font-bold">#${l.num}</span>
+          <span class="text-neutral-500 text-[11px]">+${l.split}</span>
+          <span class="font-bold text-white">${l.total}</span>
+        </div>
+      `).join('');
+    }
+
+    function updateStopwatchControlsUI(status) {
+      const startBtn = document.getElementById('swStartBtn');
+      const pauseBtn = document.getElementById('swPauseBtn');
+      const lapBtn = document.getElementById('swLapBtn');
+      const stopBtn = document.getElementById('swStopBtn');
+      const restartBtn = document.getElementById('swRestartBtn');
+      const resetBtn = document.getElementById('swResetBtn');
+
+      if (status === 'RUNNING') {
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        lapBtn.disabled = false;
+        stopBtn.disabled = false;
+        restartBtn.disabled = false;
+        resetBtn.disabled = true;
+      } else if (status === 'PAUSED') {
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RESUME</span>';
+        pauseBtn.disabled = true;
+        lapBtn.disabled = true;
+        stopBtn.disabled = false;
+        restartBtn.disabled = false;
+        resetBtn.disabled = false;
+      } else if (status === 'STOPPED') {
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>RESUME</span>';
+        pauseBtn.disabled = true;
+        lapBtn.disabled = true;
+        stopBtn.disabled = true;
+        restartBtn.disabled = false;
+        resetBtn.disabled = false;
+      } else { // IDLE
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>START</span>';
+        pauseBtn.disabled = true;
+        lapBtn.disabled = true;
+        stopBtn.disabled = true;
+        restartBtn.disabled = true;
+        resetBtn.disabled = true;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 8. TOAST NOTIFICATION UTILITY
+    // -------------------------------------------------------------
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2000);
+    }
+
+    // -------------------------------------------------------------
+    // INITIALIZATION
+    // -------------------------------------------------------------
+    window.onload = function () {
+      updateClockDisplay();
+      setInterval(updateClockDisplay, 1000);
+      updateTimerRender(tmRemainingSec);
+      renderStopwatch(0);
+      updateTimerControlsUI('IDLE');
+      updateStopwatchControlsUI('IDLE');
+    };
+  </script>
+</body>
+</html>
