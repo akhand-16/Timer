@@ -240,6 +240,11 @@
         <i class="fa-solid fa-bell"></i>
       </button>
 
+      <!-- Keyboard Shortcuts Help Modal Button -->
+      <button onclick="toggleShortcutsModal()" title="Keyboard Shortcuts (?)" class="btn-claude-outline w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs font-mono font-bold">
+        ?
+      </button>
+
       <button id="clockFormatToggle" onclick="toggleClock12_24()" class="hidden btn-claude-outline py-2 px-3 rounded-xl text-xs font-mono">
         12H
       </button>
@@ -297,6 +302,12 @@
         <span>THEME</span>
       </button>
     </div>
+
+    <!-- Quick Keyboard Shortcut Hint on Launcher -->
+    <button onclick="toggleShortcutsModal()" class="mt-8 text-neutral-500 hover:text-white transition-colors text-xs font-mono flex items-center gap-2">
+      <span class="px-2 py-0.5 rounded bg-surface-card border border-surface-border text-[10px] theme-accent-text">?</span>
+      <span>Press ? for Keyboard Shortcuts</span>
+    </button>
   </main>
 
   <!-- ======================================================== -->
@@ -830,6 +841,82 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- MODAL: KEYBOARD SHORTCUTS REFERENCE CHEATSHEET           -->
+  <!-- ======================================================== -->
+  <div id="shortcutsModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface-elevated border border-surface-border w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+      <button onclick="toggleShortcutsModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white transition-colors w-8 h-8 rounded-full flex items-center justify-center border border-neutral-800">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-left mb-6">
+        <h3 class="hero-digits text-3xl sm:text-4xl text-white">KEYBOARD SHORTCUTS</h3>
+        <p class="text-xs text-neutral-400 font-sans uppercase tracking-wider">Control every tool without touching the trackpad</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono mb-6">
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Start / Pause</span>
+          <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">Space</kbd>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Stop Current</span>
+          <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">S</kbd>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Reset / Restart</span>
+          <span class="flex gap-1">
+            <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">R</kbd>
+            <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">⇧R</kbd>
+          </span>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Record Lap</span>
+          <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">L</kbd>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Toggle Fullscreen</span>
+          <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">F</kbd>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Size Scale Down / Up</span>
+          <span class="flex gap-1">
+            <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">[</kbd>
+            <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">]</kbd>
+          </span>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Edit Timer Time</span>
+          <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">E</kbd>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Menu / Close Modal</span>
+          <kbd class="px-2 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">Esc</kbd>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Clock / Timer / Stopwatch</span>
+          <span class="flex gap-1">
+            <kbd class="px-1.5 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">1</kbd>
+            <kbd class="px-1.5 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">2</kbd>
+            <kbd class="px-1.5 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">3</kbd>
+          </span>
+        </div>
+        <div class="p-3 bg-black border border-surface-border rounded-xl flex items-center justify-between">
+          <span class="text-neutral-400">Pomodoro / Analytics</span>
+          <span class="flex gap-1">
+            <kbd class="px-1.5 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">P</kbd>
+            <kbd class="px-1.5 py-1 rounded bg-neutral-900 border border-neutral-700 text-white font-bold">A</kbd>
+          </span>
+        </div>
+      </div>
+
+      <button onclick="toggleShortcutsModal()" class="btn-claude w-full py-3 rounded-2xl text-xs sm:text-sm font-bold">
+        GOT IT (ESC)
+      </button>
+    </div>
+  </div>
+
   <!-- Toast Notification Feedback -->
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-surface-card border theme-accent-border text-white text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 font-sans">
     <i class="fa-solid fa-check theme-accent-text"></i>
@@ -1179,7 +1266,10 @@
     let currentDisplayScale = 1.0;
 
     function adjustDigitScale(val) {
-      currentDisplayScale = parseFloat(val);
+      currentDisplayScale = Math.min(1.5, Math.max(0.5, parseFloat(val)));
+      const slider = document.getElementById('digitScaleSlider');
+      if (slider) slider.value = currentDisplayScale.toFixed(2);
+
       const wrappers = ['clockDisplayWrap', 'timerDisplayWrap', 'stopwatchDisplayWrap', 'pomoDisplayWrap'];
       wrappers.forEach(id => {
         const el = document.getElementById(id);
@@ -1189,6 +1279,188 @@
       });
       wakeUpUI();
     }
+
+    function stepDigitScale(step) {
+      adjustDigitScale((currentDisplayScale + step).toFixed(2));
+      showToast(`Scale: ${(currentDisplayScale * 100).toFixed(0)}%`);
+    }
+
+    // -------------------------------------------------------------
+    // KEYBOARD SHORTCUTS & MODAL HANDLER
+    // -------------------------------------------------------------
+    function toggleShortcutsModal() {
+      const modal = document.getElementById('shortcutsModal');
+      const isHidden = modal.classList.contains('hidden');
+      if (isHidden) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+        resetIdleTimer();
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      // Don't intercept typing in inputs
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isInputActive = activeTag === 'input' || activeTag === 'textarea';
+
+      // Escape key handles closing modals first, then navigating to Menu
+      if (e.key === 'Escape') {
+        const shortcutsModal = document.getElementById('shortcutsModal');
+        const timerModal = document.getElementById('timerModal');
+        const pomoRestartModal = document.getElementById('pomoRestartModal');
+
+        if (!shortcutsModal.classList.contains('hidden')) {
+          shortcutsModal.classList.add('hidden');
+          return;
+        }
+        if (!timerModal.classList.contains('hidden')) {
+          timerModal.classList.add('hidden');
+          return;
+        }
+        if (!pomoRestartModal.classList.contains('hidden')) {
+          handlePomoRestart(false);
+          return;
+        }
+        if (currentView !== 'menu') {
+          navigateTo('menu');
+          return;
+        }
+      }
+
+      // If user is typing in a numeric or text input, allow standard typing
+      if (isInputActive) {
+        if (e.key === 'Enter') {
+          if (!document.getElementById('timerModal').classList.contains('hidden')) {
+            confirmTimerInput(false);
+          } else if (currentView === 'pomo-setup') {
+            startPomodoroWorkflow();
+          }
+        }
+        return;
+      }
+
+      // Check Help Modal toggle
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        toggleShortcutsModal();
+        return;
+      }
+
+      // Fullscreen (F)
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullScreen();
+        return;
+      }
+
+      // Digit Size Scaling: [ or ] (supports with or without Ctrl/Cmd)
+      if (e.key === '[' || (e.ctrlKey && e.key === '[')) {
+        e.preventDefault();
+        stepDigitScale(-0.1);
+        return;
+      }
+      if (e.key === ']' || (e.ctrlKey && e.key === ']')) {
+        e.preventDefault();
+        stepDigitScale(0.1);
+        return;
+      }
+
+      // Fast Navigation: 1 (Clock), 2 (Timer), 3 (Stopwatch), P (Pomodoro), A (Analytics), T (Theme)
+      if (e.key === '1') {
+        navigateTo('clock');
+        showToast("Switched to Clock (1)");
+        return;
+      }
+      if (e.key === '2') {
+        navigateTo('timer');
+        showToast("Switched to Timer (2)");
+        return;
+      }
+      if (e.key === '3') {
+        navigateTo('stopwatch');
+        showToast("Switched to Stopwatch (3)");
+        return;
+      }
+      if (e.key === 'p' || e.key === 'P') {
+        navigateTo('pomo-setup');
+        showToast("Pomodoro Setup (P)");
+        return;
+      }
+      if (e.key === 'a' || e.key === 'A') {
+        navigateTo('analytics');
+        showToast("Analytics (A)");
+        return;
+      }
+      if (e.key === 't' || e.key === 'T') {
+        navigateTo('theme');
+        showToast("Theme Studio (T)");
+        return;
+      }
+
+      // Bell Test chime
+      if (e.key === 'b' || e.key === 'B') {
+        playAcousticBell();
+        showToast("Bell Chime (B)");
+        return;
+      }
+
+      // Context-aware Action Keys: Space, S, R, L, E
+      if (currentView === 'timer') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (tmRunning) timerPause();
+          else timerToggleStartResume();
+        } else if (e.key === 's' || e.key === 'S') {
+          timerStop();
+          showToast("Timer Stopped (S)");
+        } else if (e.key === 'r' || e.key === 'R') {
+          if (e.shiftKey) {
+            timerRestart();
+            showToast("Timer Restarted (Shift+R)");
+          } else {
+            timerReset();
+            showToast("Timer Reset (R)");
+          }
+        } else if (e.key === 'e' || e.key === 'E') {
+          openTimerModal();
+        }
+      } else if (currentView === 'stopwatch') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (swRunning) stopwatchPause();
+          else stopwatchToggleStartResume();
+        } else if (e.key === 's' || e.key === 'S') {
+          stopwatchStop();
+          showToast("Stopwatch Stopped (S)");
+        } else if (e.key === 'l' || e.key === 'L') {
+          stopwatchLap();
+        } else if (e.key === 'r' || e.key === 'R') {
+          if (e.shiftKey) {
+            stopwatchRestart();
+            showToast("Stopwatch Restarted (Shift+R)");
+          } else {
+            stopwatchReset();
+            showToast("Stopwatch Reset (R)");
+          }
+        }
+      } else if (currentView === 'pomo-running') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          togglePomoPause();
+        } else if (e.key === 's' || e.key === 'S') {
+          stopAndExitPomodoro();
+          showToast("Pomodoro Ended (S)");
+        }
+      } else if (currentView === 'clock') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          toggleClock12_24();
+        } else if (e.key === 'c' || e.key === 'C') {
+          copyCurrentTime();
+        }
+      }
+    });
 
     // -------------------------------------------------------------
     // 1. PAGE ROUTING & NAVIGATION
