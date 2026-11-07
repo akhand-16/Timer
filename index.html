@@ -245,6 +245,11 @@
         ?
       </button>
 
+      <!-- Flyout / Picture-in-Picture Popout Button -->
+      <button id="flyoutToggleBtn" onclick="toggleFlyoutMode()" title="Pop Out Mini Flyout (O)" class="btn-claude-outline w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-xs">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </button>
+
       <button id="clockFormatToggle" onclick="toggleClock12_24()" class="hidden btn-claude-outline py-2 px-3 rounded-xl text-xs font-mono">
         12H
       </button>
@@ -717,14 +722,12 @@
   <!-- VIEW 4: DEDICATED STOPWATCH PAGE                        -->
   <!-- ======================================================== -->
   <section id="view-stopwatch" class="hidden fixed inset-0 w-full h-full flex flex-col items-center justify-center px-4">
-    <!-- Giant Bold Stopwatch Digits -->
+    <!-- Giant Bold Stopwatch Digits (Minutes and Seconds Only) -->
     <div id="stopwatchDisplayWrap" class="text-center flex flex-col items-center justify-center origin-center transition-transform duration-75 select-none max-w-full">
-      <div class="hero-digits text-[20vw] sm:text-[17vw] font-bold text-white tracking-tight flex items-baseline justify-center leading-none drop-shadow-2xl">
+      <div class="hero-digits text-[23vw] sm:text-[18vw] font-bold text-white tracking-tight flex items-baseline justify-center leading-none drop-shadow-2xl">
         <span id="swMinutes">00</span>
-        <span class="theme-accent-text mx-0.5 sm:mx-1">:</span>
+        <span class="theme-accent-text mx-1 sm:mx-2">:</span>
         <span id="swSeconds">00</span>
-        <span class="theme-accent-text mx-0.5 sm:mx-1">.</span>
-        <span id="swMillis" class="text-[12vw] sm:text-[10vw] text-neutral-400 w-[2ch] text-left">00</span>
       </div>
 
       <!-- Compact Lap Feed Overlay (Only visible when active & laps exist) -->
@@ -921,6 +924,41 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-surface-card border theme-accent-border text-white text-xs px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 font-sans">
     <i class="fa-solid fa-check theme-accent-text"></i>
     <span id="toastMsg">Action confirmed</span>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- DRAGGABLE & RESIZABLE MINI FLYOUT WINDOW                 -->
+  <!-- ======================================================== -->
+  <div id="flyoutWindow" class="hidden fixed z-[9999] bg-black/95 backdrop-blur-xl border border-neutral-800 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] flex flex-col justify-between overflow-hidden select-none" style="width: 320px; height: 180px; min-width: 220px; min-height: 120px; max-width: 90vw; max-height: 80vh; bottom: 28px; right: 28px; resize: both;">
+    
+    <!-- Flyout Header (Drag Handle) -->
+    <div id="flyoutHeader" class="w-full px-4 py-2.5 flex items-center justify-between border-b border-neutral-900 cursor-move bg-neutral-950/70">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full theme-accent-bg animate-pulse"></span>
+        <span id="flyoutTitle" class="text-[11px] font-sans font-bold uppercase tracking-wider theme-accent-text">TIMER FLYOUT</span>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <!-- Return / Dock back to site -->
+        <button onclick="closeFlyout()" title="Return to Main View (Esc)" class="text-neutral-400 hover:text-white transition-colors w-6 h-6 rounded-lg flex items-center justify-center bg-neutral-900 border border-neutral-800 text-[10px]">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Flyout Hero Digits Body (Click to toggle Pause / Resume) -->
+    <div onclick="toggleActiveFlyoutAction()" class="flex-1 flex flex-col items-center justify-center px-4 cursor-pointer group" title="Press Spacebar to Pause / Resume">
+      <div id="flyoutDigits" class="hero-digits text-5xl sm:text-6xl font-bold text-white tracking-tight leading-none group-hover:scale-105 transition-transform">
+        05:00
+      </div>
+      <p id="flyoutSubtext" class="text-[9px] uppercase font-mono tracking-widest text-neutral-400 mt-1">SPACE: PAUSE / RESUME</p>
+    </div>
+
+    <!-- Flyout Footer Bar -->
+    <div class="px-4 py-2 border-t border-neutral-900 flex items-center justify-between text-[10px] font-mono text-neutral-400 bg-neutral-950/40">
+      <span id="flyoutStatus">RUNNING</span>
+      <span class="text-neutral-400 hover:text-white cursor-pointer" onclick="closeFlyout()">DOCK ⤢</span>
+    </div>
   </div>
 
   <!-- ======================================================== -->
@@ -1366,6 +1404,13 @@
         return;
       }
 
+      // Flyout Popout (O)
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        toggleFlyoutMode();
+        return;
+      }
+
       // Fast Navigation: 1 (Clock), 2 (Timer), 3 (Stopwatch), P (Pomodoro), A (Analytics), T (Theme)
       if (e.key === '1') {
         navigateTo('clock');
@@ -1406,6 +1451,14 @@
       }
 
       // Context-aware Action Keys: Space, S, R, L, E
+      if (isFlyoutActive) {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          toggleActiveFlyoutAction();
+          return;
+        }
+      }
+
       if (currentView === 'timer') {
         if (e.code === 'Space') {
           e.preventDefault();
@@ -1656,6 +1709,7 @@
         pomoRemainingSec--;
         pomoElapsedThisPhase++;
         updatePomoDisplay();
+        updateFlyoutContent();
       }
 
       if (pomoRemainingSec <= 0) {
@@ -1671,6 +1725,7 @@
           pomoElapsedThisPhase = 0;
           document.getElementById('pomoPhaseLabel').textContent = "BREAK TIME";
           updatePomoDisplay();
+          updateFlyoutContent();
           showToast("Focus ended! Break starting...");
           pomoInterval = setInterval(pomoTick, 1000);
         } else {
@@ -1864,6 +1919,7 @@
         tmRemainingSec--;
         tmElapsed++;
         updateTimerRender(tmRemainingSec);
+        updateFlyoutContent();
       }
       if (tmRemainingSec <= 0) {
         clearInterval(tmInterval);
@@ -1872,6 +1928,7 @@
         wakeUpUI();
         document.getElementById('tmAlertText').classList.remove('hidden');
         updateTimerControlsUI('FINISHED');
+        updateFlyoutContent();
         recordActivity('timer', tmElapsed, { note: `Countdown reached 00:00` });
         tmElapsed = 0;
       }
@@ -1975,11 +2032,9 @@
       const totalSec = Math.floor(ms / 1000);
       const mins = Math.floor(totalSec / 60);
       const secs = totalSec % 60;
-      const centis = Math.floor((ms % 1000) / 10);
 
       document.getElementById('swMinutes').textContent = formatDigits(mins);
       document.getElementById('swSeconds').textContent = formatDigits(secs);
-      document.getElementById('swMillis').textContent = formatDigits(centis);
     }
 
     function stopwatchToggleStartResume() {
@@ -1996,6 +2051,7 @@
       if (!swRunning) return;
       swElapsedTime = performance.now() - swStartTime;
       renderStopwatch(swElapsedTime);
+      updateFlyoutContent();
       swInterval = requestAnimationFrame(stopwatchTick);
     }
 
@@ -2056,8 +2112,7 @@
       const totalSec = Math.floor(ms / 1000);
       const mins = Math.floor(totalSec / 60);
       const secs = totalSec % 60;
-      const centis = Math.floor((ms % 1000) / 10);
-      return `${formatDigits(mins)}:${formatDigits(secs)}.${formatDigits(centis)}`;
+      return `${formatDigits(mins)}:${formatDigits(secs)}`;
     }
 
     function renderLaps() {
@@ -2134,6 +2189,230 @@
         toast.classList.remove('opacity-100');
         toast.classList.add('opacity-0');
       }, 2000);
+    }
+
+    // -------------------------------------------------------------
+    // 9. DRAGGABLE & RESIZABLE FLYOUT / PICTURE-IN-PICTURE ENGINE
+    // -------------------------------------------------------------
+    let isFlyoutActive = false;
+    let docPipWindow = null;
+
+    async function toggleFlyoutMode() {
+      if (isFlyoutActive) {
+        closeFlyout();
+      } else {
+        openFlyout();
+      }
+    }
+
+    async function openFlyout() {
+      // 1. Check if the browser supports the native Always-on-Top Document PiP API (Chrome 116+)
+      if ('documentPictureInPicture' in window && !docPipWindow) {
+        try {
+          docPipWindow = await window.documentPictureInPicture.requestWindow({
+            width: 320,
+            height: 180,
+          });
+
+          // Inject styling into native PiP window
+          const style = docPipWindow.document.createElement('style');
+          const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#D97757';
+          style.textContent = `
+            @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@500;700&display=swap');
+            body {
+              margin: 0;
+              background: #000000;
+              color: #ffffff;
+              font-family: 'Space Grotesk', sans-serif;
+              user-select: none;
+              overflow: hidden;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+            }
+            .digits {
+              font-family: 'Bebas Neue', sans-serif;
+              font-size: 26vw;
+              line-height: 0.9;
+              letter-spacing: 0.03em;
+              color: #fff;
+              cursor: pointer;
+            }
+            .tag {
+              font-size: 11px;
+              letter-spacing: 0.2em;
+              text-transform: uppercase;
+              color: ${accent};
+              font-weight: 700;
+              margin-bottom: 6px;
+            }
+            .sub {
+              font-size: 9px;
+              color: #666;
+              letter-spacing: 0.15em;
+              margin-top: 6px;
+            }
+          `;
+          docPipWindow.document.head.appendChild(style);
+
+          // Container markup
+          docPipWindow.document.body.innerHTML = `
+            <div class="tag" id="pipTag">TIMER</div>
+            <div class="digits" id="pipDigits" title="Space: Pause / Resume">00:00</div>
+            <div class="sub" id="pipSub">SPACEBAR TO TOGGLE</div>
+          `;
+
+          // Handle PiP events
+          docPipWindow.document.body.addEventListener('click', toggleActiveFlyoutAction);
+          docPipWindow.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+              e.preventDefault();
+              toggleActiveFlyoutAction();
+            }
+          });
+
+          docPipWindow.addEventListener('pagehide', () => {
+            docPipWindow = null;
+            isFlyoutActive = false;
+          });
+
+          isFlyoutActive = true;
+          updateFlyoutContent();
+          showToast("Popped out in Always-On-Top PiP!");
+          return;
+        } catch (err) {
+          console.warn("Native Document PiP not available or declined, falling back to floating viewport window.", err);
+        }
+      }
+
+      // 2. Fallback: In-page Draggable & Resizable Flyout Window
+      const flyout = document.getElementById('flyoutWindow');
+      flyout.classList.remove('hidden');
+      isFlyoutActive = true;
+      updateFlyoutContent();
+      setupFlyoutDraggable();
+      showToast("Mini Flyout active (Spacebar to toggle)");
+    }
+
+    function closeFlyout() {
+      if (docPipWindow) {
+        docPipWindow.close();
+        docPipWindow = null;
+      }
+      const flyout = document.getElementById('flyoutWindow');
+      if (flyout) flyout.classList.add('hidden');
+      isFlyoutActive = false;
+      showToast("Returned to full view");
+    }
+
+    function updateFlyoutContent() {
+      let title = "TIMER";
+      let timeText = "00:00";
+      let status = "RUNNING";
+
+      if (currentView === 'stopwatch') {
+        title = "STOPWATCH";
+        const m = document.getElementById('swMinutes').textContent;
+        const s = document.getElementById('swSeconds').textContent;
+        timeText = `${m}:${s}`;
+        status = swRunning ? "RUNNING" : (swElapsedTime > 0 ? "PAUSED" : "IDLE");
+      } else if (currentView === 'pomo-running') {
+        title = pomoPhase === 'focus' ? "POMODORO (FOCUS)" : "POMODORO (BREAK)";
+        const m = document.getElementById('pomoMinutes').textContent;
+        const s = document.getElementById('pomoSeconds').textContent;
+        timeText = `${m}:${s}`;
+        status = pomoIsPaused ? "PAUSED" : "RUNNING";
+      } else {
+        // Standard Timer
+        title = "COUNTDOWN TIMER";
+        const h = parseInt(document.getElementById('tmHours').textContent) || 0;
+        const m = document.getElementById('tmMinutes').textContent;
+        const s = document.getElementById('tmSeconds').textContent;
+        timeText = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+        status = tmRunning ? "RUNNING" : (tmRemainingSec < tmTotalSec ? "PAUSED" : "IDLE");
+      }
+
+      // Update In-Page Flyout
+      if (isFlyoutActive) {
+        const titleEl = document.getElementById('flyoutTitle');
+        const digitsEl = document.getElementById('flyoutDigits');
+        const statusEl = document.getElementById('flyoutStatus');
+        if (titleEl) titleEl.textContent = title;
+        if (digitsEl) digitsEl.textContent = timeText;
+        if (statusEl) statusEl.textContent = status;
+      }
+
+      // Update Native PiP Window if opened
+      if (docPipWindow && !docPipWindow.closed) {
+        const pTag = docPipWindow.document.getElementById('pipTag');
+        const pDigits = docPipWindow.document.getElementById('pipDigits');
+        const pSub = docPipWindow.document.getElementById('pipSub');
+        if (pTag) pTag.textContent = title;
+        if (pDigits) pDigits.textContent = timeText;
+        if (pSub) pSub.textContent = `STATUS: ${status} (SPACEBAR TO TOGGLE)`;
+      }
+    }
+
+    function toggleActiveFlyoutAction() {
+      if (currentView === 'stopwatch') {
+        if (swRunning) stopwatchPause();
+        else stopwatchToggleStartResume();
+      } else if (currentView === 'pomo-running') {
+        togglePomoPause();
+      } else {
+        if (tmRunning) timerPause();
+        else timerToggleStartResume();
+      }
+      updateFlyoutContent();
+    }
+
+    // Draggable mechanics for the in-page Flyout
+    function setupFlyoutDraggable() {
+      const flyout = document.getElementById('flyoutWindow');
+      const header = document.getElementById('flyoutHeader');
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+
+      header.onmousedown = function (e) {
+        // Only primary mouse button
+        if (e.button !== 0) return;
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        const rect = flyout.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        // Reset bottom/right anchors to allow free top/left absolute dragging
+        flyout.style.bottom = 'auto';
+        flyout.style.right = 'auto';
+        flyout.style.left = `${initialLeft}px`;
+        flyout.style.top = `${initialTop}px`;
+
+        document.onmousemove = function (ev) {
+          if (!isDragging) return;
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+
+          const maxLeft = window.innerWidth - flyout.offsetWidth;
+          const maxTop = window.innerHeight - flyout.offsetHeight;
+
+          const nextLeft = Math.min(Math.max(10, initialLeft + dx), Math.max(10, maxLeft - 10));
+          const nextTop = Math.min(Math.max(10, initialTop + dy), Math.max(10, maxTop - 10));
+
+          flyout.style.left = `${nextLeft}px`;
+          flyout.style.top = `${nextTop}px`;
+        };
+
+        document.onmouseup = function () {
+          isDragging = false;
+          document.onmousemove = null;
+          document.onmouseup = null;
+        };
+      };
     }
 
     // -------------------------------------------------------------
